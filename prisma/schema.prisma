@@ -1,0 +1,490 @@
+// Prisma schema for OKURMEN Educational Center
+// PostgreSQL + Prisma 7.10.0
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// ADMINS
+// ─────────────────────────────────────────────
+model Admin {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  username     String    @unique
+  passwordHash String
+  name         String
+  role         AdminRole @default(EDITOR)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([email])
+  @@index([email, isActive]) // used by login query
+  @@map("admins")
+}
+
+enum AdminRole {
+  SUPER_ADMIN
+  ADMIN
+  EDITOR
+}
+
+// ─────────────────────────────────────────────
+// DEPARTMENTS
+// ─────────────────────────────────────────────
+model Department {
+  id          String       @id @default(cuid())
+  nameKg      String
+  nameRu      String
+  sortOrder   Int          @default(0)
+  teamMembers TeamMember[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@map("departments")
+}
+
+// ─────────────────────────────────────────────
+// TEAM MEMBERS
+// ─────────────────────────────────────────────
+model TeamMember {
+  id            String      @id @default(cuid())
+  nameKg        String
+  nameRu        String
+  positionKg    String
+  positionRu    String
+  descriptionKg String?
+  descriptionRu String?
+  experience    String?
+  photo         String?
+  instagram     String?
+  telegram      String?
+  whatsapp      String?
+  facebook      String?
+  sortOrder     Int         @default(0)
+  isPublished   Boolean     @default(true)
+  departmentId  String?
+  // SetNull on department delete — team member stays, just loses department link
+  department    Department? @relation(fields: [departmentId], references: [id], onDelete: SetNull)
+  courses       Course[]    @relation("TeacherCourses")
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([departmentId])
+  @@index([isPublished])
+  @@map("team_members")
+}
+
+// ─────────────────────────────────────────────
+// COURSES
+// ─────────────────────────────────────────────
+model Course {
+  id             String           @id @default(cuid())
+  titleKg        String
+  titleRu        String
+  descriptionKg  String?
+  descriptionRu  String?
+  shortDescKg    String?
+  shortDescRu    String?
+  price          Decimal?         @db.Decimal(10, 2)
+  currency       String           @default("KGS")
+  duration       String?
+  format         CourseFormat     @default(OFFLINE)
+  level          CourseLevel      @default(BEGINNER)
+  totalSeats     Int?
+  availableSeats Int?
+  image          String?
+  requirementsKg String?
+  requirementsRu String?
+  isPublished    Boolean          @default(false)
+  sortOrder      Int              @default(0)
+  teachers       TeamMember[]     @relation("TeacherCourses")
+  modules        CourseModule[]
+  schedules      CourseSchedule[]
+  // Restrict delete if active bookings exist — handled in API layer
+  bookings       Booking[]
+  // Cascade: reviews belong to the course
+  reviews        Review[]
+  // SetNull: graduate stays, loses course link
+  graduates      Graduate[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@index([isPublished])
+  @@index([format])
+  @@map("courses")
+}
+
+enum CourseFormat {
+  OFFLINE
+  ONLINE
+  HYBRID
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+// ─────────────────────────────────────────────
+// COURSE MODULES
+// ─────────────────────────────────────────────
+model CourseModule {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  titleKg   String
+  titleRu   String
+  contentKg String?
+  contentRu String?
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([courseId])
+  @@map("course_modules")
+}
+
+// ─────────────────────────────────────────────
+// COURSE SCHEDULES
+// ─────────────────────────────────────────────
+model CourseSchedule {
+  id        String       @id @default(cuid())
+  courseId  String
+  course    Course       @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  groupName String?
+  startDate DateTime?
+  endDate   DateTime?
+  days      String?
+  time      String?
+  format    CourseFormat @default(OFFLINE)
+  seats     Int?
+  isActive  Boolean      @default(true)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([courseId])
+  @@index([courseId, isActive])
+  @@map("course_schedules")
+}
+
+// ─────────────────────────────────────────────
+// STUDENTS
+// ─────────────────────────────────────────────
+model Student {
+  id          String    @id @default(cuid())
+  name        String
+  phone       String    @unique
+  email       String?
+  photo       String?
+  storyKg     String?
+  storyRu     String?
+  achievement String?
+  project     String?
+  isPublished Boolean   @default(false)
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([phone])
+  @@map("students")
+}
+
+// ─────────────────────────────────────────────
+// COMPANIES
+// ─────────────────────────────────────────────
+model Company {
+  id        String     @id @default(cuid())
+  name      String
+  logo      String?
+  website   String?
+  graduates Graduate[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@map("companies")
+}
+
+// ─────────────────────────────────────────────
+// GRADUATES
+// ─────────────────────────────────────────────
+model Graduate {
+  id              String   @id @default(cuid())
+  name            String
+  photo           String?
+  courseId        String?
+  // SetNull: graduate stays, loses course link when course deleted
+  course          Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  graduationYear  Int?
+  companyId       String?
+  // SetNull: graduate stays, loses company link when company deleted
+  company         Company? @relation(fields: [companyId], references: [id], onDelete: SetNull)
+  currentPosition String?
+  descriptionKg   String?
+  descriptionRu   String?
+  isPublished     Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([courseId])
+  @@index([isPublished])
+  @@map("graduates")
+}
+
+// ─────────────────────────────────────────────
+// REVIEWS
+// ─────────────────────────────────────────────
+model Review {
+  id          String   @id @default(cuid())
+  name        String
+  photo       String?
+  textKg      String?
+  textRu      String?
+  rating      Int      @default(5)
+  courseId    String?
+  // SetNull: review stays when course deleted
+  course      Course?  @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([courseId])
+  @@index([isPublished])
+  @@map("reviews")
+}
+
+// ─────────────────────────────────────────────
+// PARENT REVIEWS
+// ─────────────────────────────────────────────
+model ParentReview {
+  id          String   @id @default(cuid())
+  name        String
+  photo       String?
+  textKg      String?
+  textRu      String?
+  rating      Int      @default(5)
+  childName   String?
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([isPublished])
+  @@map("parent_reviews")
+}
+
+// ─────────────────────────────────────────────
+// BOOKINGS
+// ─────────────────────────────────────────────
+model Booking {
+  id            String                 @id @default(cuid())
+  firstName     String
+  lastName      String
+  phone         String
+  email         String?
+  courseId      String
+  course        Course                 @relation(fields: [courseId], references: [id])
+  studentId     String?
+  // SetNull: booking stays when student record deleted
+  student       Student?               @relation(fields: [studentId], references: [id], onDelete: SetNull)
+  format        CourseFormat           @default(OFFLINE)
+  groupName     String?
+  participants  Int                    @default(1)
+  comment       String?
+  amount        Decimal?               @db.Decimal(10, 2)
+  currency      String                 @default("KGS")
+  status        BookingStatus          @default(PENDING)
+  payment       Payment?
+  notifications TelegramNotification[]
+  createdAt     DateTime               @default(now())
+  updatedAt     DateTime               @updatedAt
+
+  @@index([courseId])
+  @@index([status])
+  @@index([phone])
+  @@index([courseId, status]) // used by active-booking check before course delete
+  @@map("bookings")
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  PAID
+  CANCELLED
+  COMPLETED
+}
+
+// ─────────────────────────────────────────────
+// PAYMENTS
+// ─────────────────────────────────────────────
+model Payment {
+  id            String        @id @default(cuid())
+  bookingId     String        @unique
+  // Cascade: payment deleted with booking
+  booking       Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("KGS")
+  provider      String?
+  transactionId String?       @unique
+  status        PaymentStatus @default(PENDING)
+  paidAt        DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status])
+  @@map("payments")
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// ─────────────────────────────────────────────
+// SPECIAL PROJECTS
+// ─────────────────────────────────────────────
+model SpecialProject {
+  id            String   @id @default(cuid())
+  titleKg       String
+  titleRu       String
+  descriptionKg String?
+  descriptionRu String?
+  image         String?
+  icon          String?
+  sortOrder     Int      @default(0)
+  isPublished   Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("special_projects")
+}
+
+// ─────────────────────────────────────────────
+// GALLERY
+// ─────────────────────────────────────────────
+model Gallery {
+  id          String          @id @default(cuid())
+  titleKg     String?
+  titleRu     String?
+  url         String
+  type        GalleryType     @default(PHOTO)
+  category    GalleryCategory @default(OTHER)
+  sortOrder   Int             @default(0)
+  isPublished Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([category])
+  @@index([isPublished])
+  @@map("gallery")
+}
+
+enum GalleryType {
+  PHOTO
+  VIDEO
+}
+
+enum GalleryCategory {
+  STUDENTS
+  CLASSES
+  EVENTS
+  TEAM
+  OFFICE
+  GRADUATION
+  OTHER
+}
+
+// ─────────────────────────────────────────────
+// LOCATIONS / CLASSROOMS
+// ─────────────────────────────────────────────
+model Location {
+  id            String   @id @default(cuid())
+  titleKg       String
+  titleRu       String
+  descriptionKg String?
+  descriptionRu String?
+  photo         String?
+  sortOrder     Int      @default(0)
+  isPublished   Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("locations")
+}
+
+// ─────────────────────────────────────────────
+// SOCIAL LINKS
+// ─────────────────────────────────────────────
+model SocialLink {
+  id        String   @id @default(cuid())
+  platform  String   @unique
+  url       String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("social_links")
+}
+
+// ─────────────────────────────────────────────
+// SITE CONTENT
+// ─────────────────────────────────────────────
+model SiteContent {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  valueKg   String?  @db.Text
+  valueRu   String?  @db.Text
+  type      String   @default("text")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+  @@map("site_content")
+}
+
+// ─────────────────────────────────────────────
+// TELEGRAM NOTIFICATIONS
+// ─────────────────────────────────────────────
+model TelegramNotification {
+  id        String    @id @default(cuid())
+  bookingId String?
+  // SetNull: notification stays for audit when booking deleted
+  booking   Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  message   String    @db.Text
+  status    String    @default("pending")
+  sentAt    DateTime?
+  error     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([bookingId])
+  @@index([status])
+  @@map("telegram_notifications")
+}
+
+// ─────────────────────────────────────────────
+// WHY US FEATURES
+// ─────────────────────────────────────────────
+model Feature {
+  id          String   @id @default(cuid())
+  titleKg     String
+  titleRu     String
+  descKg      String?
+  descRu      String?
+  icon        String?
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("features")
+}

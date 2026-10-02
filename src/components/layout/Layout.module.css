@@ -1,0 +1,19 @@
+.main {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+}
+
+/* Push content below fixed header */
+.withHeader {
+  padding-top: var(--header-height);
+}
+
+/* Hero pages — no top padding (hero goes edge to edge) */
+.heroPage {
+  padding-top: 0;
+}

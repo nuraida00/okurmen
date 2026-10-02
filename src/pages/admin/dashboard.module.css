@@ -1,0 +1,182 @@
+.page { display: flex; flex-direction: column; gap: var(--space-8); }
+
+.welcome {
+  font-size: var(--text-lg);
+  color: var(--color-gray-700);
+}
+
+.welcome strong { color: var(--color-primary); }
+
+.statsGrid {
+  display: grid;
+  /* 2 columns on mobile, auto-fit on wider screens — cards never overflow */
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-4);
+  /* Clamp the grid inside the content area */
+  min-width: 0;
+}
+
+/* 3 columns on medium screens */
+@media (min-width: 640px) { .statsGrid { grid-template-columns: repeat(3, 1fr); } }
+/* 4 columns on large admin viewport */
+@media (min-width: 1100px) { .statsGrid { grid-template-columns: repeat(4, 1fr); } }
+/* 8 cards in one row only when there's enough horizontal space */
+@media (min-width: 1400px) { .statsGrid { grid-template-columns: repeat(8, 1fr); } }
+
+.statCard {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-4);
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-base);
+  /* Prevent card from overflowing its grid cell */
+  min-width: 0;
+  overflow: hidden;
+  text-decoration: none;
+}
+
+.statCard:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.statIcon {
+  width: 40px; height: 40px;
+  border-radius: var(--radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.statValue {
+  font-size: var(--text-xl);
+  font-weight: 900;
+  color: var(--color-dark);
+  line-height: 1;
+  /* Truncate if the number is very long */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statLabel {
+  font-size: var(--text-xs);
+  color: var(--color-gray-500);
+  margin-top: 4px;
+}
+
+.sectionTitle {
+  font-size: var(--text-xl);
+  font-weight: 800;
+  color: var(--color-dark);
+}
+
+.quickGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+@media (min-width: 540px)  { .quickGrid { grid-template-columns: 1fr 1fr; } }
+@media (min-width: 1100px) { .quickGrid { grid-template-columns: repeat(4, 1fr); } }
+
+.quickCard {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  padding: var(--space-5);
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-start;
+  text-decoration: none;
+  transition: all var(--transition-base);
+  border: 2px solid transparent;
+  box-shadow: var(--shadow-sm);
+  /* Prevent card text from blowing out its cell */
+  min-width: 0;
+  overflow: hidden;
+}
+
+.quickCard:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.quickIcon {
+  font-size: 1.75rem;
+  flex-shrink: 0;
+}
+
+.quickLabel {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 4px;
+  /* Clip long labels */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quickDesc {
+  font-size: var(--text-xs);
+  color: var(--color-gray-400);
+}
+
+/* Skeleton loader */
+.skeleton {
+  display: inline-block;
+  width: 40px;
+  height: 1em;
+  background: linear-gradient(90deg, var(--color-gray-100) 25%, var(--color-gray-200) 50%, var(--color-gray-100) 75%);
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: shimmer 1.4s infinite;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Help card */
+.helpCard {
+  background: rgba(23,59,130,0.04);
+  border: 1px solid rgba(23,59,130,0.12);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+}
+
+.helpIcon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.helpTitle {
+  font-size: var(--text-base);
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-bottom: var(--space-3);
+}
+
+.helpText {
+  font-size: var(--text-sm);
+  color: var(--color-gray-600);
+  line-height: 1.9;
+}
+
+.helpText code {
+  background: rgba(23,59,130,0.08);
+  color: var(--color-primary);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 0.85em;
+}
